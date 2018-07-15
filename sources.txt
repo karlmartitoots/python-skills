@@ -1,0 +1,6 @@
+Generator Tricks for Systems Programmers - Version 2.0
+http://www.dabeaz.com/generators-uk/
+
+Python Practice Book
+https://anandology.com/python-practice-book/
+

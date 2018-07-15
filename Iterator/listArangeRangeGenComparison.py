@@ -1,37 +1,35 @@
 import time
 import numpy as np
 
-def getTime(iterable, moreTime = 0):
-    sum = 0
-    start_time = time.time()
-    for i in iterable:
-        sum += 1
-    return moreTime + time.time() - start_time
+n = 1000000
 
-def printer(dataObject,result):
-    print(dataObject + " time: " + str(result))
+#numpy arange
+sum = 0
+startArange = time.time()
+for i in np.arange(n):
+    sum += 1
+endArange = time.time()
+arangeTime = endArange - startArange
 
-n = 100000000
+startRange = time.time()
+for i in range(n):
+    sum += 1
+endRange = time.time()
+rangeTime = endRange - startRange
 
-#iterable creation times
-arangeStart = time.time()
-myArange = np.arange(n)
-arangeTime = time.time() - arangeStart
+startList = time.time()
+for i in [x for x in range(n)]:
+    sum += 1
+endList = time.time()
+listTime = endList - startList
 
-rangeStart = time.time()
-myRange = range(n)
-rangeTime = time.time() - rangeStart
+startGen = time.time()
+for i in (x for x in range(n)):
+    sum += 1
+endGen = time.time()
+genTime = endGen - startGen
 
-listStart = time.time()
-myList = [x for x in range(n)]
-listTime = time.time() - listStart
-
-genStart = time.time()
-myGen = (x for x in range(n))
-genTime = time.time() - genStart
-
-print("Arange time: ", getTime(np.arange(n),moreTime = arangeTime))
-print("Range time: ", getTime(range(n),moreTime = rangeTime))
-print("List time: ", getTime(myList,moreTime = listTime))
-print("Gen time: ", getTime(myGen,moreTime = genTime))
-
+print("Arange time: ", arangeTime)
+print("Range time: ", rangeTime)
+print("List time: ", listTime)
+print("Gen time: ", genTime)
