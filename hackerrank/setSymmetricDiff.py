@@ -1,3 +1,5 @@
+#https://www.hackerrank.com/challenges/symmetric-difference/problem
+
 m = input()
 A = set(map(int,input().split()))
 n = input()
