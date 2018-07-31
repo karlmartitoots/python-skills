@@ -152,7 +152,7 @@ def isSet(threecards):
 
 def click(event):
     if canvas.find_withtag(CURRENT):
-        print(canvas.gettags(event.widget.find_withtag(CURRENT)))
+        print(canvas.gettags(canvas.find_withtag(CURRENT)))
         tags = canvas.gettags(CURRENT)
         #slotX = int(tags[0])
         #slotY = int(tags[1])
