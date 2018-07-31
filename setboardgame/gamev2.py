@@ -28,7 +28,7 @@ class Card(Button):
         self.chosen = False
         self.observers = []
         self.shapeImage = self.loadImage()
-        Button.__init__(self, parent, image = self.shapeImage, command = click, height = self.containerHeight, width = self.containerWidth,*args,**kwargs)
+        Button.__init__(self, parent, image = self.shapeImage, command = self.onClick, height = self.containerHeight, width = self.containerWidth,*args,**kwargs)
         self.origColor = self.cget("background")
         self.bind("<Enter>", self.onEnter)
         self.bind("<Leave>", self.onLeave)
@@ -59,12 +59,12 @@ class Card(Button):
         if not self.chosen:
             self.config(bg=self.origColor)
 
-    def onClick(self,event):
+    def onClick(self):
         self.setChosen()
     
     def setChosen(self):
         self.chosen = True
-        self.config(bg="dark orange")
+        self.config(bg="tan1")
         self.notifyObservers()
     
     def setUnChosen(self):
@@ -72,8 +72,6 @@ class Card(Button):
         self.config(bg=self.origColor)
 
 class Board:
-    
-    chosenCardCount = 0
     
     def __init__(self, parent):
         self.cardSlots = [[None,None,None],\
@@ -83,14 +81,36 @@ class Board:
         self.chosenCards = []
         self.GL = Gamelogic()
         self.deck = Deck(parent)
-        self.boardLeftMargin, self.boardTopMargin = 50,50
-        self.distBetweenCardsX, self.distBetweenCardsY = 20, 20
+        self.emptyCard = Card(parent,"empty","","",1)
+        self.scoreVar = StringVar()
+        self.score = 0
+        self.scoreVar.set("0")
+        self.scoreLabel = Label(parent, textvariable = self.scoreVar)
+        self.scoreLabel.config(font=("Courier", 44))
+        self.scoreLabel.grid(row=4,column=0,columnspan = 3)
     
     def setCardAt(self,col,row,card):
         self.cardSlots[row][col] = card
+        self.getCardAt(col,row).grid(row=row,column=col,padx=cardPadding,pady=cardPadding)
+        card.addObserver(self)
     
     def getCardAt(self,col,row):
         return self.cardSlots[row][col]
+    
+    def replaceCard(self, removeCard, addCard):
+        for row in range(4):
+            for col in range(3):
+                if self.cardSlots[row][col] == removeCard:
+                    self.setCardAt(col,row,addCard)
+    
+    def replaceChosenCards(self):
+        for card in self.chosenCards:
+            newCard = self.deck.takeOne()
+            if newCard:    
+                self.replaceCard(card, newCard)
+                card.destroy()
+            else:
+                self.replaceCard(card, self.emptyCard)
     
     def chosenCardsInSet(self):
         return self.GL.isSet(self.chosenCards)
@@ -102,16 +122,20 @@ class Board:
     
     def choose(self,card):
         self.chosenCards.append(card)
-        Board.chosenCardCount += 1
-        if Board.chosenCardCount == 3:
+        if len(self.chosenCards) > 2:
             for c in self.chosenCards:
                 c.setUnChosen()
             if self.chosenCardsInSet():
                 print("SET!")
+                self.incrementScoreVar()
+                self.replaceChosenCards()
             else:
                 print("Try again.")
             self.chosenCards.clear()
-            Board.chosenCardCount = 0
+        
+    def incrementScoreVar(self):
+        self.score += 1
+        self.scoreVar.set(str(self.score))
 
 class Deck:
     
@@ -122,7 +146,10 @@ class Deck:
         random.shuffle(self.deckCards)
     
     def takeOne(self):
-        return self.deckCards.pop()
+        if len(self.deckCards)>0:
+            return self.deckCards.pop()
+        else:
+            return None
 
 class Gamelogic:
     
@@ -152,12 +179,9 @@ class Gamelogic:
             self.shadeSet(threecards[0],threecards[1],threecards[2]) and \
             self.amountSet(threecards[0],threecards[1],threecards[2])
 
-def click():
-    print("Click")
-
 frameWidth = 800
 frameHeight = 800
-cardPadding=(25,25)
+cardPadding=(20,20)
 
 frame = Tk()
 frame.title("SET")
