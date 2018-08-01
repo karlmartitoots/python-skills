@@ -11,7 +11,6 @@ shapes = ["diamond","oval","squiggle"]
 
 colors = ["red","green","purple"]
 
-# solid striped outlined
 shadings = ["full","striped","empty"]
 
 amounts = [1,2,3]
@@ -19,59 +18,100 @@ amounts = [1,2,3]
 class Card:
     
     def __init__(self,shape,color,shading,amount):
+        self.containerWidth, self.containerHeight = 200,130
+        self.shapeWidth, self.shapeHeight = 30,60
+        self.distBetweenShapes = 10
         self.shape = shape
         self.color = color
         self.shading = shading
         self.amount = amount
+        self.shapeImage = self.loadImage()
+        self.containerObject = None
+        self.shapeObjects = []
+    
+    def loadImage(self):
+        cardImage = Img.open(os.path.join(dirname, 'resources/'+self.shape+self.color+self.shading+'.png'))
+        resizedCardImage = cardImage.resize((self.shapeWidth, self.shapeHeight), Img.ANTIALIAS)
+        tkCardImage = ImgTk.PhotoImage(resizedCardImage)
+        allImages.append(tkCardImage)
+        return tkCardImage
+    
+    def drawShapesInContainer(self,leCanvas,containerTopX,containerTopY):
+        horistontalPadding = (self.containerWidth-self.shapeWidth)/2
+        verticalPadding = (self.containerHeight-self.shapeHeight)/2
+        horisontalCorrection = 0
+        if self.amount == 2:
+            horisontalCorrection -= (self.shapeWidth+self.distBetweenShapes)/2
+        elif self.amount == 3:
+            horisontalCorrection -= self.shapeWidth+self.distBetweenShapes
+        for _ in range(self.amount):
+            self.shapeObjects.append(leCanvas.create_image(horistontalPadding + containerTopX + horisontalCorrection, verticalPadding + containerTopY, image=self.shapeImage, anchor='nw'))
+            horisontalCorrection += self.shapeWidth+self.distBetweenShapes
+        
+    def drawContainerAt(self,leCanvas,topX,topY,col,row):
+        self.containerObject = leCanvas.create_rectangle(topX, topY,\
+                            topX+self.containerWidth, topY+self.containerHeight, tags = str(col)+" "+str(row))
+
+    def drawAt(self,leCanvas,topX,topY,col,row):
+        self.drawContainerAt(leCanvas,topX,topY,col,row)
+        self.drawShapesInContainer(leCanvas,topX,topY)
 
 class Board:
     
-    chosenCardNext = 0
+    chosenCardCount = 0
     
-    def __init__(self):
+    def __init__(self, gameCanvas):
         self.cardSlots = [[None,None,None],\
                           [None,None,None],\
                           [None,None,None],\
                           [None,None,None]]
         self.chosenCards = []
-        self.chosenCardsX = []
-        self.chosenCardsY = []
+        self.deck = Deck()
+        self.gameCanvas = gameCanvas
+        self.boardLeftMargin,self.boardTopMargin = 50,50
+        self.distBetweenCardsX, self.distBetweenCardsY = 20, 20
     
-    def setCard(self,posX,posY,card):
-        self.cardSlots[posY][posX] = card
+    def setCardAt(self,col,row,card):
+        self.cardSlots[row][col] = card
     
-    def getCard(self,posX,posY):
-        return self.cardSlots[posY][posX]
+    def getCardAt(self,col,row):
+        return self.cardSlots[row][col]
 
     def chooseCard(self,posX,posY):
         self.chosenCards.append(self.cardSlots[posY][posX])
-        self.chosenCardsX.append(posX)
-        self.chosenCardsY.append(posY)
-        Board.chosenCardNext += 1
-        if Board.chosenCardNext == 3:
+        Board.chosenCardCount += 1
+        if Board.chosenCardCount == 3:
             if self.chosenCardsInSet():
                 print("That's a set!")
-                for x,y in zip(self.chosenCardsX,self.chosenCardsY):
-                    newCardAt(x,y)
-                self.clearChosenCards()
+                for chosenCard in self.chosenCards:
+                    coords = self.gameCanvas.gettags(chosenCard.containerObject).split(" ")
+                    self.replaceCardAt(coords[0],coords[1],self.deck.takeOne())
             else:
                 print("Try again.")
-                self.clearChosenCards()
-            Board.chosenCardNext = 0
+            self.chosenCards = []    
+            Board.chosenCardCount = 0
     
     def chosenCardsInSet(self):
         return isSet(self.chosenCards)
-    
-    def clearChosenCards(self):
-        self.chosenCards = []
-        self.chosenCardsX = []
-        self.chosenCardsY = []
 
-    def initFillSlots(self,deck):
-        for i in range(3):
-            for j in range(4):
-                self.setCard(i,j,deck.takeOne())
-        return deck
+    def initFillSlots(self):
+        for col in range(3):
+            for row in range(4):
+                self.setCardAt(col,row,self.deck.takeOne())
+    
+    def initDrawBoard(self):
+        for col in range(3):
+            for row in range(4):
+                nextCard = self.getCardAt(col,row)
+                cardTopX = self.boardLeftMargin + col*nextCard.containerWidth + col*self.distBetweenCardsX
+                cardTopY = self.boardTopMargin + row*nextCard.containerHeight + row*self.distBetweenCardsY
+                nextCard.drawAt(self.gameCanvas,cardTopX,cardTopY,col,row)
+    
+    def replaceCardAt(self,col,row,newCard):
+        cardAtRemoval = self.getCardAt(col,row)
+        self.gameCanvas.delete(cardAtRemoval.containerObject)
+        self.gameCanvas.delete(cardAtRemoval.shapeObjects)
+        self.setCardAt(col,row,newCard)
 
 class Deck:
     
@@ -110,87 +150,24 @@ def isSet(threecards):
            shadeSet(threecards[0],threecards[1],threecards[2]) and \
            amountSet(threecards[0],threecards[1],threecards[2])
 
-def drawCard(card,posX,posY):
-    if cardRefs[posY][posX]:
-        for shape in cardRefs[posY][posX]:
-            canvas.delete(shape)
-    cardx = cardX(posX)
-    cardy = cardY(posY)
-    canvas.create_rectangle(cardx, cardy,\
-                            cardx+cardwidth, cardy+cardheight, tags = str(posX)+" "+str(posY), activefill = "grey")
-    shapes = drawCardImage(card,cardx,cardy)
-    cardRefs[posY][posX] = shapes
-
-def drawCardImage(card,x,y):
-    return drawShapes(x,y,card.amount,card.shape,card.color,card.shading)
-        
-
-def drawShapes(x,y,amount,shape,color,shading):
-    paddingX = (cardwidth-shapeWidth)//2
-    paddingY = (cardheight-shapeHeight)//2
-    distBetween = 10
-    correction = 0
-    shapes = []
-    if amount == 2:
-        correction -= (shapeWidth+distBetween)/2
-    elif amount == 3:
-        correction -= shapeWidth+distBetween
-    for _ in range(amount):
-        shapes.append(drawShape(paddingX + x + correction,paddingY + y,shapeWidth,shapeHeight,shape,color,shading))
-        correction += shapeWidth+distBetween
-    return shapes
-
-def drawShape(x,y,w,h,shape,color,shading):
-    img = Img.open(os.path.join(dirname, 'resources/'+shape+color+shading+'.png'))
-    img = img.resize((w, h), Img.ANTIALIAS)
-    tk_img = ImgTk.PhotoImage(img)
-    imgs.append(tk_img)
-    return canvas.create_image(x, y, image=tk_img, anchor='nw')
-
-def cardX(X):
-    return leftmargin + X*cardwidth + X*cardHorisontalMargin
-
-def cardY(Y):
-    return topmargin + Y*cardheight + Y*cardVerticalMargin
-
 def click(event):
     if canvas.find_withtag(CURRENT):
+        print(canvas.gettags(canvas.find_withtag(CURRENT)))
         tags = canvas.gettags(CURRENT)
-        slotX = int(tags[0])
-        slotY = int(tags[1])
-        board.chooseCard(slotX,slotY)
-
-def newCardAt(x,y):
-    board.setCard(x,y,deck.takeOne())
-    drawCard(board.getCard(x,y),x,y)
-
-def drawFirstCards():
-    for i in range(3):
-        for j in range(4):
-            drawCard(board.getCard(i,j),i,j)
+        #slotX = int(tags[0])
+        #slotY = int(tags[1])
+        #board.chooseCard(slotX,slotY)
 
 frame = Tk()
 frame.title("SET")
-imgs = []
-cardwidth = 200
-cardheight = 130
-shapeWidth = 30
-shapeHeight = 60
-topmargin = 50
-leftmargin = 50
-cardVerticalMargin = 20
-cardHorisontalMargin = 20
 canvas = Canvas(frame, width=800, height=800, background="white")
 canvas.grid()
+allImages = []
 
 deck = Deck()
-board = Board()
-deck = board.initFillSlots(deck)
-cardRefs = [[None,None,None],\
-            [None,None,None],\
-            [None,None,None],\
-            [None,None,None]]
-drawFirstCards()
+board = Board(canvas)
+board.initFillSlots()
+board.initDrawBoard()
 
 canvas.bind("<Button-1>", click)
 
