@@ -119,6 +119,8 @@ class Board:
         for col in range(3):
             for row in range(4):
                 self.setCardAt(col,row,self.deck.takeOne())
+                board.getCardAt(col,row).grid(row=row,column=col,padx=cardPadding,pady=cardPadding)
+
     
     def choose(self,card):
         self.chosenCards.append(card)
@@ -153,25 +155,29 @@ class Deck:
 
 class Gamelogic:
     
-    def shapeSet(self,card1,card2,card3):
+    def shapeSet(self,card2,card1,card3):
         a = card1.shape == card2.shape
-        b = card2.shape == card3.shape
-        return (a and b) or (not a and not b)
+        b = card1.shape == card3.shape
+        c = card2.shape == card3.shape
+        return (a and b and c) or (not a and not b and not c)
 
     def colorSet(self,card1,card2,card3):
         a = card1.color == card2.color
-        b = card2.color == card3.color
-        return (a and b) or (not a and not b)
+        b = card1.color == card3.color
+        c = card2.color == card3.color
+        return (a and b and c) or (not a and not b and not c)
 
     def shadeSet(self,card1,card2,card3):
         a = card1.shading == card2.shading
-        b = card2.shading == card3.shading
-        return (a and b) or (not a and not b)
+        b = card1.shading == card3.shading
+        c = card2.shading == card3.shading
+        return (a and b and c) or (not a and not b and not c)
 
     def amountSet(self,card1,card2,card3):
         a = card1.amount == card2.amount
-        b = card2.amount == card3.amount
-        return (a and b) or (not a and not b)
+        b = card1.amount == card3.amount
+        c = card2.amount == card3.amount
+        return (a and b and c) or (not a and not b and not c)
 
     def isSet(self,threecards):
         return self.shapeSet(threecards[0],threecards[1],threecards[2]) and \
@@ -191,10 +197,6 @@ allImages = []
 deck = Deck(frame)
 board = Board(frame)
 board.initFillSlots()
-
-for col in range(3):
-    for row in range(4):
-        board.getCardAt(col,row).grid(row=row,column=col,padx=cardPadding,pady=cardPadding)
 
 frame.mainloop()
 
