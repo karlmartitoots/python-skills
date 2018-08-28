@@ -6,6 +6,7 @@ or
 A command is a reified method call.
 '''
 import arcade
+import random
 
 SCREEN_WIDTH = 800
 SCREEN_HEIGHT = 600
@@ -14,6 +15,8 @@ RECT_WIDTH = 50
 RECT_HEIGHT = 50
 
 MOVEMENT_SPEED = 5
+AI_MOVE_INTERVAL = 10
+NUMBER_OF_AIS = 10
 
 class Command:
     def execute():
@@ -119,6 +122,9 @@ class Rectangle:
     
     def addSpeedDown(self):
         self.delta_y = -MOVEMENT_SPEED
+    
+    def randomCommand(self):
+        random.choice([self.upPress, self.downPress,self.leftPress,self.rightPress,self.upDownRelease,self.leftRightRelease])(self)
 
 class MyGame(arcade.Window):
     """
@@ -127,6 +133,8 @@ class MyGame(arcade.Window):
     def __init__(self, width, height):
         super().__init__(width, height, title="Command pattern")
         self.player = None
+        self.AI_list = []
+        self.AI = None
         self.left_down = False
 
     def setup(self):
@@ -138,11 +146,17 @@ class MyGame(arcade.Window):
         angle = 0
         color = arcade.color.WHITE
         self.player = Rectangle(x, y, width, height, angle, color)
+        for _ in range(NUMBER_OF_AIS):
+            self.AI_list.append(Rectangle(random.randrange(SCREEN_WIDTH), random.randrange(SCREEN_HEIGHT), width, height, angle, arcade.color.RED))
         self.left_down = False
 
     def update(self, dt):
         """ Move everything """
         self.player.move()
+        for AI in self.AI_list:
+            AI.move()
+            if random.randrange(AI_MOVE_INTERVAL) == 0:
+                AI.randomCommand()
 
     def on_draw(self):
         """
@@ -151,6 +165,8 @@ class MyGame(arcade.Window):
         arcade.start_render()
 
         self.player.draw()
+        for AI in self.AI_list:
+            AI.draw()
 
     def on_key_press(self, key, modifiers):
         """
