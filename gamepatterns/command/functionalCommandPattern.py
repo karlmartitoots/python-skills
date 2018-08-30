@@ -1,10 +1,3 @@
-'''
-Encapsulate a request as an object, thereby letting users parameterize clients with different requests, queue or log requests, and support undoable operations.
-
-or
-
-A command is a reified method call.
-'''
 import arcade
 import random
 
@@ -14,37 +7,29 @@ SCREEN_HEIGHT = 600
 RECT_WIDTH = 50
 RECT_HEIGHT = 50
 
-MOVEMENT_SPEED = 5
-AI_MOVE_INTERVAL = 5
-NUMBER_OF_AIS = 100
+MOVEMENT_SPEED = 10
+AI_MOVE_INTERVAL = 10
+NUMBER_OF_AIS = 20
 
-class Command:
-    def execute():
-        raise NotImplementedError
+# Commands
 
-class MoveRightCommand(Command):
-    def execute(player):
-        player.addSpeedRight()
+def right(player):
+    player.increaseSpeedRight()
         
-class MoveLeftCommand(Command):
-    def execute(player):
-        player.addSpeedLeft()
+def left(player):
+    player.increaseSpeedLeft()
 
-class MoveUpCommand(Command):
-    def execute(player):
-        player.addSpeedUp()
+def up(player):
+    player.increaseSpeedUp()
 
-class MoveDownCommand(Command):
-    def execute(player):
-        player.addSpeedDown()
+def down(player):
+    player.increaseSpeedDown()
 
-class StopHorizontalCommand(Command):
-    def execute(player):
-        player.stopHorizontalMovement()
+def stopHorizontal(player):
+    player.stopHorizontalMovement()
         
-class StopVerticalCommand(Command):
-    def execute(player):
-        player.stopVerticalMovement()
+def stopVertical(player):
+    player.stopVerticalMovement()
         
 
 
@@ -63,12 +48,12 @@ class Rectangle:
         self.delta_y = 0
 
         # Commands
-        self.upPress = MoveUpCommand.execute
-        self.downPress = MoveDownCommand.execute
-        self.leftPress = MoveLeftCommand.execute
-        self.rightPress = MoveRightCommand.execute
-        self.upDownRelease = StopVerticalCommand.execute
-        self.leftRightRelease = StopHorizontalCommand.execute
+        self.upPress = up
+        self.downPress = down
+        self.leftPress = left
+        self.rightPress = right
+        self.upDownRelease = stopVertical
+        self.leftRightRelease = stopHorizontal
 
         # Size and rotation
         self.width = width
@@ -111,17 +96,21 @@ class Rectangle:
     def stopVerticalMovement(self):
         self.delta_y = 0
 
-    def addSpeedRight(self):
+    def increaseSpeedRight(self):
         self.delta_x = MOVEMENT_SPEED
     
-    def addSpeedLeft(self):
+    def increaseSpeedLeft(self):
         self.delta_x = -MOVEMENT_SPEED
     
-    def addSpeedUp(self):
+    def increaseSpeedUp(self):
         self.delta_y = MOVEMENT_SPEED
     
-    def addSpeedDown(self):
+    def increaseSpeedDown(self):
         self.delta_y = -MOVEMENT_SPEED
+    
+    def switchUpDown(self):
+        self.upPress = down
+        self.downPress = up
     
     def randomCommand(self):
         random.choice([self.upPress, self.downPress,self.leftPress,self.rightPress,self.upDownRelease,self.leftRightRelease])(self)
